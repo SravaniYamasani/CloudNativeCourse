@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"weather"
 
 	"github.com/google/go-cmp/cmp"
 )
@@ -17,9 +18,12 @@ func TestParseResponse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := Conditions{
+	want := weather.Conditions{
 		Summary:     "Clouds",
 		Temperature: 281.33,
+		Pressure:    1027,
+		Humidity:    64,
+		Wind:        1.79,
 	}
 	got, err := ParseResponse(data)
 	if err != nil {
@@ -52,9 +56,9 @@ func TestParseResponseInvalid(t *testing.T) {
 
 func TestFormatURL(t *testing.T) {
 	t.Parallel()
-	c := NewClient("dummyAPIKey")
+	c := weather.NewClient("6d0300127185bc4308c20a86c9d0712d")
 	location := "Paris,FR"
-	want := "https://api.openweathermap.org/data/2.5/weather?q=Paris%2CFR&appid=dummyAPIKey"
+	want := "https://api.openweathermap.org/data/2.5/weather?q=Paris%2CFR&appid=6d0300127185bc4308c20a86c9d0712d"
 	got := c.FormatURL(location)
 	if !cmp.Equal(want, got) {
 		t.Error(cmp.Diff(want, got))
@@ -63,9 +67,9 @@ func TestFormatURL(t *testing.T) {
 
 func TestFormatURLSpaces(t *testing.T) {
 	t.Parallel()
-	c := NewClient("dummyAPIKey")
+	c := weather.NewClient("6d0300127185bc4308c20a86c9d0712d")
 	location := "Wagga Wagga,AU"
-	want := "https://api.openweathermap.org/data/2.5/weather?q=Wagga+Wagga%2CAU&appid=dummyAPIKey"
+	want := "https://api.openweathermap.org/data/2.5/weather?q=Wagga+Wagga%2CAU&appid=6d0300127185bc4308c20a86c9d0712d"
 	got := c.FormatURL(location)
 	if !cmp.Equal(want, got) {
 		t.Error(cmp.Diff(want, got))
@@ -102,12 +106,15 @@ func TestGetWeather(t *testing.T) {
 		io.Copy(w, f)
 	}))
 	defer ts.Close()
-	c := NewClient("dummyAPIkey")
+	c := weather.NewClient("6d0300127185bc4308c20a86c9d0712d")
 	c.BaseURL = ts.URL
 	c.HTTPClient = ts.Client()
-	want := Conditions{
+	want := weather.Conditions{
 		Summary:     "Clouds",
 		Temperature: 281.33,
+		Pressure:    1027,
+		Humidity:    64,
+		Wind:        1.79,
 	}
 	got, err := c.GetWeather("Paris,FR")
 	if err != nil {
@@ -120,7 +127,7 @@ func TestGetWeather(t *testing.T) {
 
 func TestFahrenheit(t *testing.T) {
 	t.Parallel()
-	input := Temperature(274.15)
+	input := weather.Temperature(274.15)
 	want := 33.8
 	got := input.Fahrenheit()
 	if !cmp.Equal(want, got) {
